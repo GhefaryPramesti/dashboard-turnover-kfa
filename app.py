@@ -9,9 +9,12 @@ from datetime import timedelta
 #page configuration
 st.set_page_config(
     page_title="Dashboard Turnover Karyawan | PT Kimia Farma Apotek",
-    page_icon="💊",
     layout="wide"
 )
+
+#dashboard title
+st.title("📊Dashboard Turnover Karyawan PT Kimia Farma Apotek")
+st.markdown("Analisis Prediksi Turnover dan Notifikasi Kontrak Karyawan PKWT")
 
 #load model
 @st.cache_resource

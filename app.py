@@ -55,11 +55,71 @@ else:
 
 df_filtered = df[df['Unit Bisnis'].isin(unit_filter)] if unit_filter else df.copy()
 
+st.markdown("---")
+uploaded_main = st.file_uploader(
+    "Upload data karyawan terbaru (.csv atau .xlsx)",
+    type=['csv', 'xlsx'],
+    key="main_upload"
+)
+
+if uploaded_main is not None:
+  if uploaded_main.name.endswith('.xlsx'):
+    df = pd.read_excel(uploaded_main)
+  else:
+    df = pd.read_csv(uploaded_main)
+
+
+  #preprocessing kolom
+  df.columns = df.columns.str.strip()
+  if 'Unit Bisnis' in df.columns:
+    df['Unit Bisnis'] = df['Unit Bisnis'].astype(str).str.upper().str.strip()
+
+  if 'Is_Resign' not in df.columns:
+    if 'Status Terminasi' in df.columns:
+      df['Status Terminasi Clean'] = df['Status Terminasi'].astype(str).str.upper().str.strip()
+      keywords_resign = ['ATAS PERMINATAAN SENDIRI', 'ATAS PERMINTAAN SENDIRI', 'MENGUNDURKAN DIRI', 'NON AKTIF', 'PENGUNDURAN DIRI','PERMINTAAN SENDIRI',
+      'RESIGN', 'RESIGN / APOTEK TUTUP', 'RESIGN / MENUNGGU SK PHK KFA', 'RESIGN ATAS PERMINTAAN SENDIRI', 'TIDAK AKTIF']
+      df['Is_Resign'] = df['Status Terminasi Clean'].apply(
+          lambda x: 1 if any(k in x for k in keywords_resign) else 0
+      )
+
+  #kolom lokasi kerja group
+  if 'Lokasi Kerja Group' not in df.columns:
+    top_50_lokasi = df['Lokasi Kerja'].value_counts().nlargest(50).index.tolist()
+    df['Lokasi Kerja Group'] = df['Lokasi Kerja'].apply(
+        lambda x: x if x in top_50_lokasi else 'OTHER_LOCATION'
+    )
+
+  #Kkolom usia_clean
+  if 'Usia_Masuk' not in df.columns:
+    if 'USIA_CLEAN' in df.columns and 'Rincian Masa Kerja New' in df.columns:
+      df['Rincian Masa Kerja New'] = pd.to_numeric(df['Rincian Masa Kerja New'], errors='coerce')
+      df['Usia_Masuk'] = df['USIA_CLEAN'] - (df['Rincian Masa Kerja New'] / 12)
+
+  #kolom tingkatan_jabatan_new
+  if 'Tingkatan_Jabatan_New' not in df.columns and 'Tingkatan_Jabatan' in df.columns:
+    jabatan_map={
+        'DIREKSI': 1, 'MANAGER': 2, 'ASISTEN MANAGER': 3, 'SUPERVISOR': 4, 'PELAKSANA': 5
+    }
+    df['Tingkatan Jabatan'] = df['Tingkatan Jabatan'].astype(str).str.upper().str.strip()
+    df['Tingkatan_Jabatan_New'] = df['Tingkatan Jabatan'].map(jabatan_map)
+
+  #konvert kolom tanggal
+  date_cols = ['Tgl Mulai Bekerja\n(Dd/Mm/Yyyy) New', 'Tanggal Berakhir Kontrak', 'Tanggal Terminasi (Dd/Mm/Yyyy)']
+  for col in date_cols:
+    if col in df.columns:
+      df[col] = pd.to_datetime(df[col], errors='coerce')
+  st.success(f"File Berhasil Diupload!: **{len(df):,} baris**")
+else:
+  st.info("Menampilkan data default dari data_cleaned.csv")
+
+#update df_filtered setelah upload
+df_filtered = df[df['Unit Bisnis'].isin(unit_filter)] if unit_filter else df.copy()
+
 #tabs for navigation
 tab1, tab2, tab3 = st.tabs([
     "Analisis Tren Historis", "Prediksi dan Segmentasi Risiko", "Notifikasi Kontrak PKWT"
 ])
-
 #TAB1
 with tab1:
   st.subheader("Analisis Tren Historis Resign 2023 - 2025")
@@ -114,7 +174,7 @@ with tab1:
       top_unit = df_resign['Unit Bisnis'].value_counts().nlargest(5).reset_index()
       top_unit.columns = ['Unit Bisnis', 'Jumlah Resign']
       fig_unit = px.bar(top_unit, x='Jumlah Resign', y='Unit Bisnis', orientation='h',
-                        title="Top 10 Unit Bisnis - Jumlah Resign", color='Jumlah Resign', color_continuous_scale=['#9CD5FF', '#0AC4E0', '#0992C2', '#0B2D72'])
+                        title="Top 5 Unit Bisnis - Jumlah Resign", color='Jumlah Resign', color_continuous_scale=['#9CD5FF', '#0AC4E0', '#0992C2', '#0B2D72'])
       fig_unit.update_layout(yaxis={'categoryorder': 'total ascending'}, coloraxis_showscale=False)
       st.plotly_chart(fig_unit, use_container_width=True, key="grafik_unit")
 
@@ -225,6 +285,22 @@ with tab2:
             fig_hr_jab.update_layout(yaxis={'categoryorder':'total ascending'})
             st.plotly_chart(fig_hr_jab, use_container_width=True, key="hr_jab")
 
+      #feature importances
+      if hasattr(model, 'feature_importances_'):
+        st.subheader("Faktor Pendorong Turnover")
+        fi = pd.DataFrame({
+            'Fitur': model_features,
+            'Importance': model.feature_importances_
+        }).sort_values('Importance', ascending=True).tail(4)
+
+        fig_fi = px.bar(fi, x='Importance', y='Fitur', orientation='h',
+                        title="Top Fitur Paling Berpengaruh",
+                        color='Importance',
+                        color_continuous_scale=['#9CD5FF', '#0AC4E0', '#0992C2', '#0B2D72'])
+        fig_fi.update_layout(coloraxis_showscale=False)
+        st.plotly_chart(fig_fi, use_container_width=True, key="feature_importance")
+
+
       #tabel detail
       st.subheader("Detail Prediksi Karyawan")
       col_f1, col_f2 = st.columns(2)
@@ -232,11 +308,12 @@ with tab2:
         filter_risiko = st.selectbox("Filter Risiko", ["Semua", "Tinggi", "Sedang", "Rendah"])
       with col_f2:
         filter_prediksi = st.selectbox("Filter Prediksi", ["Semua", "Akan Keluar", "Akan Bertahan"])
-        df_tampil = df_active.copy()
-        if filter_risiko != "Semua":
-          df_tampil = df_tampil[df_tampil['Tingkat Risiko'] == filter_risiko]
-        if filter_prediksi != "Semua":
-          df_tampil = df_tampil[df_tampil['Prediksi'] == filter_prediksi]
+      df_tampil = df_active.copy()
+
+      if filter_risiko != "Semua":
+        df_tampil = df_tampil[df_tampil['Tingkat Risiko'] == filter_risiko]
+      if filter_prediksi != "Semua":
+        df_tampil = df_tampil[df_tampil['Prediksi'] == filter_prediksi]
 
       cols_to_show = ['ID_Karyawan', 'Jabatan', 'Unit Bisnis', 'Lokasi Kerja', 'Prediksi', 'Tingkat Risiko', 'Probabilitas_Resign']
       cols_to_show = [c for c in cols_to_show if c in df_tampil.columns]
@@ -304,7 +381,7 @@ with tab3:
       st.markdown("---")
 
       if df_notif.empty:
-        st.succes("Tidak ada kontrak PKWT yang akan berakhir dalam 30 hari ke depan")
+        st.success("Tidak ada kontrak PKWT yang akan berakhir dalam 30 hari ke depan")
       else:
         st.subheader(f"{len(df_notif)} Karyawan PKWT Perlu Perhatian")
 
@@ -319,7 +396,7 @@ with tab3:
         #kolom yang ingin ditampilkan
         id_col = next((c for c in df_notif.columns if 'ID' in c.upper()), None)
         unit_col_n = next((c for c in df_notif.columns if 'UNIT' in c.upper()), None)
-        jab_col_n = next((c for c in df_notif.columns if 'JABATAN' in c.upper()), None)
+        jab_col_n = 'Jabatan' if 'Jabatan' in df_notif.columns else None
         lok_col_n = next((c for c in df_notif.columns if 'LOKASI' in c.upper()), None)
 
         shows_cols = [c for c in [id_col, unit_col_n, jab_col_n, lok_col_n, tgl_kontrak_col, 'Sisa_Hari', 'Urgensi'] if c]
@@ -335,4 +412,3 @@ with tab3:
         fig_urgensi = px.bar(urgensi_dist, x='Urgensi', y='Jumlah', title="Distribusi Kontrak Berakhir per Kategori Urgensi",
                              color='Urgensi', color_discrete_map={'Kritis': '#EF4444', 'Tinggi': '#F59E0B', 'Sedang': '#0EA5E9', 'Rendah': '#10B981'})
         st.plotly_chart(fig_urgensi, use_container_width=True, key="grafik_urgensi")
-

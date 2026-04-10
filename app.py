@@ -89,6 +89,7 @@ if uploaded_main is not None:
     df['Lokasi Kerja Group'] = df['Lokasi Kerja'].apply(
         lambda x: x if x in top_50_lokasi_ref else 'OTHER_LOCATION'
     )
+    
 
   #Kkolom usia_clean
   if 'Usia_Masuk' not in df.columns:

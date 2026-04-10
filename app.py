@@ -21,10 +21,10 @@ st.markdown("Analisis Prediksi Turnover dan Notifikasi Kontrak Karyawan PKWT")
 def load_model_resources():
     model = joblib.load('turnover_model.pkl')
     features = joblib.load('model_features.pkl')
-    top_50_lokasi = joblib.load('top_50_lokasi.pkl')
-    return model, features
+    top_50_lokasi = joblib.load('top_50_lokasi.pkl') 
+    return model, features, top_50_lokasi
 
-model, model_features = load_model_resources()
+model, model_features, top_50_lokasi_ref = load_model_resources()
 
 #load data
 @st.cache_data

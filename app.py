@@ -85,7 +85,8 @@ if uploaded_main is not None:
 
   #kolom lokasi kerja group
   if 'Lokasi Kerja Group' not in df.columns:
-    top_50_lokasi = df['Lokasi Kerja'].value_counts().nlargest(50).index.tolist()
+    df_reference = load_data()  # pake top 50 dari data_cleaned.csv
+    top_50_lokasi = df_reference['Lokasi Kerja'].value_counts().nlargest(50).index.tolist()
     df['Lokasi Kerja Group'] = df['Lokasi Kerja'].apply(
         lambda x: x if x in top_50_lokasi else 'OTHER_LOCATION'
     )

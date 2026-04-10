@@ -225,11 +225,6 @@ with tab2:
         else:
           return 'Rendah'
 
-      X_pred = df_dummy[model_features].fillna(0)
-      df_active['Probabilitas_Resign'] = model.predict_proba(X_pred)[:, 1]
-      df_active['Prediksi'] = df_active['Probabilitas_Resign'].apply(
-          lambda x: 'Akan Keluar' if x >= threshold else 'Akan Bertahan'
-      )
       df_active['Tingkat Risiko'] = df_active['Probabilitas_Resign'].apply(tentukan_risiko)
 
       st.write("Jumlah fitur model:", len(model_features))

@@ -199,13 +199,7 @@ with tab1:
 with tab2:
   st.subheader("Prediksi Risiko Turnover Karyawan")
   
-  if 'Status Pegawai New' in df.columns:
-    df_active = df[
-        (df['Is_Resign'] == 0) &
-        (df['Status Pegawai New'].astype(str).str.upper().str.strip() == 'PKWTT')
-    ].copy()
-  else:
-    df_active = df[df['Is_Resign'] == 0].copy()
+  df_active = df[df['Is_Resign'] == 0].copy()
 
   if df_active.empty:
     st.warning("Tidak ada data karyawan aktif yang ditampilkan")

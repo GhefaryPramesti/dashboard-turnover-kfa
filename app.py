@@ -197,14 +197,17 @@ with tab1:
       st.plotly_chart(fig_mk, use_container_width=True, key="grafik_mk")
 
 #TAB2
+#TAB2
 with tab2:
   st.subheader("Prediksi Risiko Turnover Karyawan")
-  
-  df_active = df[df['Is_Resign'] == 0].copy()
-
-  st.write("Total df_active:", len(df_active))
-  st.write("Status Pegawai New unique:", df['Status Pegawai New'].unique() if 'Status Pegawai New' in df.columns else "kolom tidak ada")
-  st.write("Contoh probabilitas setelah prediksi:", model.predict_proba(df_dummy[model_features].fillna(0))[:5, 1] if 'df_dummy' in dir() else "belum diprediksi")
+  #ambil data aktif PKWTT aja
+  if 'Status Pegawai New' in df.columns:
+    df_active = df[
+        (df['Is_Resign'] == 0) &
+        (df['Status Pegawai New'].astype(str).str.upper().str.strip() == 'PKWTT')
+    ].copy()
+  else:
+    df_active = df[df['Is_Resign'] == 0].copy()
 
   if df_active.empty:
     st.warning("Tidak ada data karyawan aktif yang ditampilkan")

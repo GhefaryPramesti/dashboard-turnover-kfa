@@ -21,6 +21,7 @@ st.markdown("Analisis Prediksi Turnover dan Notifikasi Kontrak Karyawan PKWT")
 def load_model_resources():
     model = joblib.load('turnover_model.pkl')
     features = joblib.load('model_features.pkl')
+    top_50_lokasi = joblib.load('top_50_lokasi.pkl')
     return model, features
 
 model, model_features = load_model_resources()
@@ -85,13 +86,9 @@ if uploaded_main is not None:
 
   #kolom lokasi kerja group
   if 'Lokasi Kerja Group' not in df.columns and 'Lokasi Kerja' in df.columns:
-    df_reference = load_data()
-    top_50_lokasi = df_reference['Lokasi Kerja'].value_counts().nlargest(50).index.tolist()
     df['Lokasi Kerja Group'] = df['Lokasi Kerja'].apply(
-        lambda x: x if x in top_50_lokasi else 'OTHER_LOCATION'
+        lambda x: x if x in top_50_lokasi_ref else 'OTHER_LOCATION'
     )
-    st.write("Cek Lokasi Kerja Group:", df['Lokasi Kerja Group'].value_counts().head(10))
-    
 
   #Kkolom usia_clean
   if 'Usia_Masuk' not in df.columns:

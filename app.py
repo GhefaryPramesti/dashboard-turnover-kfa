@@ -202,6 +202,10 @@ with tab2:
   
   df_active = df[df['Is_Resign'] == 0].copy()
 
+  st.write("Total df_active:", len(df_active))
+  st.write("Status Pegawai New unique:", df['Status Pegawai New'].unique() if 'Status Pegawai New' in df.columns else "kolom tidak ada")
+  st.write("Contoh probabilitas setelah prediksi:", model.predict_proba(df_dummy[model_features].fillna(0))[:5, 1] if 'df_dummy' in dir() else "belum diprediksi")
+
   if df_active.empty:
     st.warning("Tidak ada data karyawan aktif yang ditampilkan")
   else:

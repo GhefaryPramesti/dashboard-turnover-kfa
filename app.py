@@ -234,9 +234,6 @@ with tab2:
       )
       df_active['Tingkat Risiko'] = df_active['Probabilitas_Resign'].apply(tentukan_risiko)
 
-      st.write("Jumlah fitur model:", len(model_features))
-      st.write("Jumlah fitur data:", len([c for c in model_features if c in df_dummy.columns]))
-      st.write("Contoh probabilitas:", model.predict_proba(X_pred)[:5, 1])
 
       #metrikk
       total_pred = len(df_active)

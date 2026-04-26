@@ -1,3 +1,4 @@
+%%writefile app.py
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -128,7 +129,7 @@ if "PKWTT" in status_filter:
   tab1, tab2 = st.tabs(["Analisis Tren Historis", "Prediksi dan Segmentasi Risiko"])
   tab3 = None
 else:
-  tab3 = st.tabs(["Analisis Tren Historis", "Prediksi dan Segmentasi Risiko", "Notifikasi Kontrak PKWT"])
+  tab1, tab2, tab3 = st.tabs(["Analisis Tren Historis", "Prediksi dan Segmentasi Risiko", "Notifikasi Kontrak PKWT"])
 
 #TAB1
 with tab1:

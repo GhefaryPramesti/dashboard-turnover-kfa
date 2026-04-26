@@ -207,7 +207,7 @@ with tab1:
 #TAB2
 with tab2:
   st.subheader("Prediksi Risiko Turnover Karyawan")
-  
+   st.write("Status filter:", status_filter)
   if "PKWTT" in status_filter:
     df_active = df[
         (df['Is_Resign'] == 0) &

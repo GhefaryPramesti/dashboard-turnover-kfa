@@ -213,17 +213,14 @@ with tab2:
         (df['Is_Resign'] == 0) &
         (df['Status Pegawai New'].astype(str).str.upper().str.strip() == 'PKWTT')
     ].copy()
-    st.info("Menampilkan prediksi khusus Karyawan Tetap (PKWTT)")
   elif "PKWT" in status_filter:
     df_active = df[
         (df['Is_Resign'] == 0) &
         (df['Status Pegawai New'].astype(str).str.upper().str.strip() == 'PKWT')
     ].copy()
-    st.info("Menampilkan prediksi khusus Karyawan Kontrak (PKWT)")
   else:
     df_active = df[df['Is_Resign'] == 0].copy()
-    st.info("Menampilkan prediksi semua karyawan aktif")
-
+    
   if df_active.empty:
     st.warning("Tidak ada data karyawan aktif yang ditampilkan")
   else:

@@ -117,10 +117,18 @@ else:
 
 #update df_filtered setelah upload + filter status pegawai
 df_filtered = df[df['Unit Bisnis'].isin(unit_filter)] if unit_filter else df.copy()
-if status_filter != "Semua" and 'Status Pegawai New' in df_filtered.columns:
-  df_filtered = df_filtered[
-      df_filtered['Status Pegawai New'].astype(str).str.upper().str.strip() == status_filter
-  ]
+if 'Status Pegawai New' i df_filtered.columns:
+  if "PKWTT" in status_filter:
+    df_filtered = df_filtered[df_filtered['Status Pegawai New'].astype(str).str.upper().str.strip() == 'PKWTT']
+  elif "PKWT" in status_filter:
+    df_filtered = df_filtered[df_filtered['Status Pegawai New'].astype(str).str.upper().str.strip() == 'PKWT']
+
+#tabs berdasarkan status
+if "PKWTT" in status_filter:
+  tab1, tab2 = st.tabs(["Analisis Tren Historis", "Prediksi dan Segmentasi Risiko"])
+  tab3 = None
+else:
+  tab3 = st.tabs(["Analisis Tren Historis", "Prediksi dan Segmentasi Risiko", "Notifikasi Kontrak PKWT"])
 
 #tabs for navigation
 tab1, tab2, tab3 = st.tabs([

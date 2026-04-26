@@ -1,4 +1,3 @@
-%%writefile app.py
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -131,7 +130,6 @@ if "PKWTT" in status_filter:
 else:
   tab1, tab2, tab3 = st.tabs(["Analisis Tren Historis", "Prediksi dan Segmentasi Risiko", "Notifikasi Kontrak PKWT"])
 
-#TAB1
 with tab1:
   st.subheader("Analisis Tren Historis Resign 2023 - 2025")
   df_resign = df_filtered[df_filtered['Is_Resign'] == 1].copy()

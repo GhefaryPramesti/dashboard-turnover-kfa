@@ -21,7 +21,7 @@ st.markdown("Analisis Prediksi Turnover dan Notifikasi Kontrak Karyawan PKWT")
 def load_model_resources():
     model = joblib.load('turnover_model.pkl')
     features = joblib.load('model_features.pkl')
-    top_50_lokasi = joblib.load('top_50_lokasi.pkl') 
+    top_50_lokasi = joblib.load('top_50_lokasi.pkl')
     return model, features, top_50_lokasi
 
 model, model_features, top_50_lokasi_ref = load_model_resources()
@@ -34,27 +34,36 @@ def load_data():
   if 'Unit Bisnis' in df.columns:
     df['Unit Bisnis'] = df['Unit Bisnis'].astype(str).str.upper().str.strip()
 
-    date_cols = ['Tgl Mulai Bekerja(Dd/Mm/Yyyy)', 'Tgl Mulai Bekerja\n(Dd/Mm/Yyyy)', 'Tanggal Berakhir Kontrak', 'Tanggal Terminasi(Dd/Mm/Yyyy)', 'Tanggal Terminasi (Dd/Mm/Yyyy)']
-    for col in date_cols:
-      if col in df.columns:
-        df[col] = pd.to_datetime(df[col], errors='coerce')
-    return df
+  date_cols = ['Tgl Mulai Bekerja(Dd/Mm/Yyyy)', 'Tgl Mulai Bekerja\n(Dd/Mm/Yyyy)', 'Tanggal Berakhir Kontrak', 'Tanggal Terminasi(Dd/Mm/Yyyy)', 'Tanggal Terminasi (Dd/Mm/Yyyy)']
+  for col in date_cols:
+    if col in df.columns:
+      df[col] = pd.to_datetime(df[col], errors='coerce')
+  return df
 
 df = load_data()
 
 #sidebar
 st.sidebar.header("Filter Dashboard")
 st.sidebar.caption("Filter ini hanya berlaku untuk Tab 1 - Analisis Tren Historis")
+
+#filter status pegawai
+status_filter = st.sidebar.radio(
+    "Pilih Status Pegawai:",
+    options=["Semua", "PKWT", "PKWTT"],
+    index=0
+
+)
+
+st.sidebar.markdown("---")
+
+#filter unit bisnis
 semua_unit = sorted(df['Unit Bisnis'].dropna().unique().tolist())
 pilih_semua_unit = st.sidebar.checkbox("Semua Unit Bisnis", value=True)
-
 if pilih_semua_unit:
   unit_filter = semua_unit
   st.sidebar.multiselect("Pilih Unit Bisnis:", options=semua_unit, disabled=True)
 else:
-   unit_filter = st.sidebar.multiselect("Pilih Unit Bisnis:", options=semua_unit, default=[])
-
-df_filtered = df[df['Unit Bisnis'].isin(unit_filter)] if unit_filter else df.copy()
+  unit_filter = st.sidebar.multiselect("Pilih Unit Bisnis:", options=semua_unit, default=[])
 
 st.markdown("---")
 uploaded_main = st.file_uploader(
@@ -69,7 +78,6 @@ if uploaded_main is not None:
   else:
     df = pd.read_csv(uploaded_main)
 
-
   #preprocessing kolom
   df.columns = df.columns.str.strip()
   if 'Unit Bisnis' in df.columns:
@@ -80,16 +88,11 @@ if uploaded_main is not None:
       df['Status Terminasi Clean'] = df['Status Terminasi'].astype(str).str.upper().str.strip()
       keywords_resign = ['ATAS PERMINATAAN SENDIRI', 'ATAS PERMINTAAN SENDIRI', 'MENGUNDURKAN DIRI', 'NON AKTIF', 'PENGUNDURAN DIRI','PERMINTAAN SENDIRI',
       'RESIGN', 'RESIGN / APOTEK TUTUP', 'RESIGN / MENUNGGU SK PHK KFA', 'RESIGN ATAS PERMINTAAN SENDIRI', 'TIDAK AKTIF']
-      df['Is_Resign'] = df['Status Terminasi Clean'].apply(
-          lambda x: 1 if any(k in x for k in keywords_resign) else 0
-      )
+      df['Is_Resign'] = df['Status Terminasi Clean'].apply(lambda x: 1 if any(k in x for k in keywords_resign) else 0)
 
   #kolom lokasi kerja group
   if 'Lokasi Kerja Group' not in df.columns and 'Lokasi Kerja' in df.columns:
-    df['Lokasi Kerja Group'] = df['Lokasi Kerja'].apply(
-        lambda x: x if x in top_50_lokasi_ref else 'OTHER_LOCATION'
-    )
-    
+    df['Lokasi Kerja Group'] = df['Lokasi Kerja'].apply(lambda x: x if x in top_50_lokasi_ref else 'OTHER_LOCATION')
 
   #Kkolom usia_clean
   if 'Usia_Masuk' not in df.columns:
@@ -99,9 +102,7 @@ if uploaded_main is not None:
 
   #kolom tingkatan_jabatan_new
   if 'Tingkatan_Jabatan_New' not in df.columns and 'Tingkatan_Jabatan' in df.columns:
-    jabatan_map={
-        'DIREKSI': 1, 'MANAGER': 2, 'ASISTEN MANAGER': 3, 'SUPERVISOR': 4, 'PELAKSANA': 5
-    }
+    jabatan_map={'DIREKSI': 1, 'MANAGER': 2, 'ASISTEN MANAGER': 3, 'SUPERVISOR': 4, 'PELAKSANA': 5}
     df['Tingkatan Jabatan'] = df['Tingkatan Jabatan'].astype(str).str.upper().str.strip()
     df['Tingkatan_Jabatan_New'] = df['Tingkatan Jabatan'].map(jabatan_map)
 
@@ -114,8 +115,12 @@ if uploaded_main is not None:
 else:
   st.info("Menampilkan data default dari data_cleaned.csv")
 
-#update df_filtered setelah upload
+#update df_filtered setelah upload + filter status pegawai
 df_filtered = df[df['Unit Bisnis'].isin(unit_filter)] if unit_filter else df.copy()
+if status_filter != "Semua" and 'Status Pegawai New' in df_filtered.columns:
+  df_filtered = df_filtered[
+      df_filtered['Status Pegawai New'].astype(str).str.upper().str.strip() == status_filter
+  ]
 
 #tabs for navigation
 tab1, tab2, tab3 = st.tabs([
@@ -200,6 +205,7 @@ with tab1:
 with tab2:
   st.subheader("Prediksi Risiko Turnover Karyawan")
   #ambil data aktif aja
+
   df_active = df[df['Is_Resign'] == 0].copy()
 
   if df_active.empty:

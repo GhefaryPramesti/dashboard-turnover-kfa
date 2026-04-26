@@ -117,7 +117,7 @@ else:
 
 #update df_filtered setelah upload + filter status pegawai
 df_filtered = df[df['Unit Bisnis'].isin(unit_filter)] if unit_filter else df.copy()
-if 'Status Pegawai New' i df_filtered.columns:
+if 'Status Pegawai New' in df_filtered.columns:
   if "PKWTT" in status_filter:
     df_filtered = df_filtered[df_filtered['Status Pegawai New'].astype(str).str.upper().str.strip() == 'PKWTT']
   elif "PKWT" in status_filter:

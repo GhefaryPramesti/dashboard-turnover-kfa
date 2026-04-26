@@ -48,7 +48,7 @@ st.sidebar.header("Filter Dashboard")
 #filter status pegawai
 status_filter = st.sidebar.radio(
     "Pilih Status Pegawai:",
-    options=["Semua", "PKWT", "PKWTT"],
+    options=["Semua", "PKWT (Karyawan Kontrak)", "PKWTT (Karyawan Tetap)"],
     index=0
 
 )
@@ -213,7 +213,6 @@ with tab2:
         (df['Is_Resign'] == 0) &
         (df['Status Pegawai New'].astype(str).str.upper().str.strip() == 'PKWTT')
     ].copy()
-    st.info("Menampilkan prediksi khusus Karyawan Tetap (PKWTT)")
   elif "PKWT" in status_filter:
     df_active = df[
         (df['Is_Resign'] == 0) &

@@ -1,3 +1,4 @@
+%%writefile app.py
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -44,7 +45,6 @@ df = load_data()
 
 #sidebar
 st.sidebar.header("Filter Dashboard")
-st.sidebar.caption("Filter ini hanya berlaku untuk Tab 1 - Analisis Tren Historis")
 
 #filter status pegawai
 status_filter = st.sidebar.radio(
@@ -57,6 +57,7 @@ status_filter = st.sidebar.radio(
 st.sidebar.markdown("---")
 
 #filter unit bisnis
+st.sidebar.caption("Filter ini hanya berlaku untuk Tab 1 - Analisis Tren Historis")
 semua_unit = sorted(df['Unit Bisnis'].dropna().unique().tolist())
 pilih_semua_unit = st.sidebar.checkbox("Semua Unit Bisnis", value=True)
 if pilih_semua_unit:
@@ -213,6 +214,7 @@ with tab2:
         (df['Is_Resign'] == 0) &
         (df['Status Pegawai New'].astype(str).str.upper().str.strip() == 'PKWTT')
     ].copy()
+    st.info("Menampilkan prediksi khusus Karyawan Tetap (PKWTT)")
   elif "PKWT" in status_filter:
     df_active = df[
         (df['Is_Resign'] == 0) &
@@ -220,7 +222,7 @@ with tab2:
     ].copy()
   else:
     df_active = df[df['Is_Resign'] == 0].copy()
-    
+
   if df_active.empty:
     st.warning("Tidak ada data karyawan aktif yang ditampilkan")
   else:

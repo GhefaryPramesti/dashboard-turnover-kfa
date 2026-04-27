@@ -42,6 +42,101 @@ def load_data():
 
 df = load_data()
 
+def preprocess_uploaded_data(df):
+  #1. membersihkan spasi di nama kolom
+  df.columns = df.columns.str.strip()
+
+  #2. buang kolom yg tdk perlu
+  cols_to_drop = ['DAY', 'MONTH', 'YEAR', 'Tanggal Lahir\n(Dd/Mm/Yyyy)', 'Rincian Usia', 
+                    'Kategori Usia', 'Unit', 'COST CENTER INDUK', 'DAY.1', 'MONTH.1', 'YEAR.1',
+                    'Masa Kerja New', 'Kategori Masa Kerja New', 'Masa Kerja (Y)', '>5 & >2',
+                    'DAY.2', 'MONTH.2', 'YEAR.2', 'Date', 'Bulan', 'Tahun']
+  df = df.drop(columns=[c for c in cols_to_drop if c in df.columns], errors='ignore')
+
+  #3. standarisasi unit bisnis
+  if 'Unit Bisnis' in df.columns:
+    df['Unit Bisnis'] = df['Unit Bisnis'].astype(str).str.upper().str.strip()
+
+  #4. standarisasi status pegawai
+  if 'Status Pegawai New' in df.columns:
+    df['Status Pegawai New'] = df['Status Pegawai New'].astype(str).str.upper().str.strip()
+
+  #5. standarisasi tingkatan jabatan
+  if 'Tingkatan Jabatan' in df.columns:
+    df['Tingkatan Jabatan'] = df['Tingkatan Jabatan'].astype(str).str.upper().str.strip()
+
+  #6. buat kolom is_resign dari status terminasi
+  if 'Status Terminasi' in df.columns:
+    df['Status Terminasi Clean'] = df['Status Terminasi'].astype(str).str.upper().str.strip()
+    keywords_resign = ['ATAS PERMINATAAN SENDIRI', 'ATAS PERMINTAAN SENDIRI', 'MENGUNDURKAN DIRI', 'NON AKTIF', 'PENGUNDURAN DIRI','PERMINTAAN SENDIRI',
+                       'RESIGN', 'RESIGN / APOTEK TUTUP', 'RESIGN / MENUNGGU SK PHK KFA', 'RESIGN ATAS PERMINTAAN SENDIRI', 'TIDAK AKTIF']
+    keywords_hapus = ['CUTI DILUAR TANGGUNGAN PERUSAHAAN', 'HABIS KONTRAK / APOTEK TUTUP', 'KHL', 'MENINGGAL DUNIA', 'MENINGGAL DUNIA', 
+                      'MUTASI ANTAR ENTITAS', 'PELANGGARAN', 'PENSIUN', 'PENSIUN DEFINITIF', 'PHK', 'RESTRUKTURISASI', 'WAFAT']
+    def label_status(status):
+      if any(k in status for k in keywords_hapus):
+        return 'DELETE'
+      if any(k in status for k in keywords_resign):
+        return 1
+      if 'AKTIF' in status or 'HABIS KONTRAK' in status:
+        return 0
+      return 'DELETE'
+    df['Is_Resign'] = df['Status Terminasi Clean'].apply(label_status)
+    df = df[df['Is_Resign'] != 'DELETE'].copy()
+    df['Is_Resign'] = df['Is_Resign'].astype(int)
+
+    #7. buat kolom usia_clean dari kolom usia
+    if 'USIA' in df.columns:
+      def clean_age(x):
+        if isinstance(x, str):
+          try:
+            return int(x.split(' ')[0])
+          except:
+            return np.nan
+        return x
+      df['USIA_CLEAN'] = df['USIA'].apply(clean_age)
+    
+    #8. konversi kolom rincian masa kerja new ke numerik
+    if 'Rincian Masa Kerja New' in df.columns:
+      df['Rincian Masa Kerja New'] = df['Rincian Masa Kerja New'].astype(str).str.upper().str.strip()
+
+    #9. buat kolom usia_masuk
+    if 'USIA_CLEAN' in df.columns and 'Rincian Masa Kerja New' in df.columns:
+      df['Usia_Masuk'] = df['USIA_CLEAN'] - (df['Rincian Masa Kerja New'] / 12)
+    
+    #10. buat tingkatan_jabatan_new
+    if 'Tingkatan Jabatan' in df.columns:
+      jabatan_map={'DIREKSI': 1, 'MANAGER': 2, 'ASISTEN MANAGER': 3, 'SUPERVISOR': 4, 'PELAKSANA': 5}
+      df['Tingkatan_Jabatan_New'] = df['Tingkatan Jabatan'].map(jabatan_map)
+
+    #11. buat lokasi kerja group pake top 50 dari data training
+    if 'Lokasi Kerja' in df.columns:
+      df['Lokasi Kerja Group'] = df['Lokasi Kerja'].apply(
+          lambda x: x if x in top_50_lokasi_ref else 'OTHER LOCATION'
+      )
+
+    #12. deduplikasi
+    kolom_lahir = [c for c in df.columns if 'Lahir' in c]
+    kolom_masuk = [c for c in df.columns if 'Mulai Bekerja' in c]
+    if kolom_lahir and kolom_masuk:
+      for col in [kolom_lahir[0], kolom_masuk[0]]:
+        df[col] = pd.to_datetime(df[col], errors='coerce')
+      df = df.drop_duplicates(subset=[kolom_lahir[0], kolom_masuk[0]], keep='last')
+
+    #13. konversi kolom tanggal
+    date_cols = ['Tgl Mulai Bekerja\n(Dd/Mm/Yyyy) New', 'Tanggal Berakhir Kontrak', 
+                 'Tanggal Terminasi (Dd/Mm/Yyyy)']
+    for col in date_cols:
+      if col in df.columns:
+        df[col] = pd.to_datetime(df[col], errors='coerce')
+    
+    #14. drop baris yang fitur utama nya kosong
+    fitur_utama = ['USIA_CLEAN', 'Usia_Masuk', 'Rincian Masa Kerja New']
+    fitur_ada = [f for f in fitur_utama if f in df.columns]
+    df = df.dropna(subset=fitur_ada)
+    
+    return df
+
+
 #sidebar
 st.sidebar.header("Filter Dashboard")
 
@@ -78,39 +173,7 @@ if uploaded_main is not None:
   else:
     df = pd.read_csv(uploaded_main)
 
-  #preprocessing kolom
-  df.columns = df.columns.str.strip()
-  if 'Unit Bisnis' in df.columns:
-    df['Unit Bisnis'] = df['Unit Bisnis'].astype(str).str.upper().str.strip()
-
-  if 'Is_Resign' not in df.columns:
-    if 'Status Terminasi' in df.columns:
-      df['Status Terminasi Clean'] = df['Status Terminasi'].astype(str).str.upper().str.strip()
-      keywords_resign = ['ATAS PERMINATAAN SENDIRI', 'ATAS PERMINTAAN SENDIRI', 'MENGUNDURKAN DIRI', 'NON AKTIF', 'PENGUNDURAN DIRI','PERMINTAAN SENDIRI',
-      'RESIGN', 'RESIGN / APOTEK TUTUP', 'RESIGN / MENUNGGU SK PHK KFA', 'RESIGN ATAS PERMINTAAN SENDIRI', 'TIDAK AKTIF']
-      df['Is_Resign'] = df['Status Terminasi Clean'].apply(lambda x: 1 if any(k in x for k in keywords_resign) else 0)
-
-  #kolom lokasi kerja group
-  if 'Lokasi Kerja Group' not in df.columns and 'Lokasi Kerja' in df.columns:
-    df['Lokasi Kerja Group'] = df['Lokasi Kerja'].apply(lambda x: x if x in top_50_lokasi_ref else 'OTHER_LOCATION')
-
-  #Kkolom usia_clean
-  if 'Usia_Masuk' not in df.columns:
-    if 'USIA_CLEAN' in df.columns and 'Rincian Masa Kerja New' in df.columns:
-      df['Rincian Masa Kerja New'] = pd.to_numeric(df['Rincian Masa Kerja New'], errors='coerce')
-      df['Usia_Masuk'] = df['USIA_CLEAN'] - (df['Rincian Masa Kerja New'] / 12)
-
-  #kolom tingkatan_jabatan_new
-  if 'Tingkatan_Jabatan_New' not in df.columns and 'Tingkatan_Jabatan' in df.columns:
-    jabatan_map={'DIREKSI': 1, 'MANAGER': 2, 'ASISTEN MANAGER': 3, 'SUPERVISOR': 4, 'PELAKSANA': 5}
-    df['Tingkatan Jabatan'] = df['Tingkatan Jabatan'].astype(str).str.upper().str.strip()
-    df['Tingkatan_Jabatan_New'] = df['Tingkatan Jabatan'].map(jabatan_map)
-
-  #konvert kolom tanggal
-  date_cols = ['Tgl Mulai Bekerja\n(Dd/Mm/Yyyy) New', 'Tanggal Berakhir Kontrak', 'Tanggal Terminasi (Dd/Mm/Yyyy)']
-  for col in date_cols:
-    if col in df.columns:
-      df[col] = pd.to_datetime(df[col], errors='coerce')
+  df = preprocess_uploaded_data(df)
   st.success(f"File Berhasil Diupload!: **{len(df):,} baris**")
 else:
   st.info("Menampilkan data default dari data_cleaned.csv")

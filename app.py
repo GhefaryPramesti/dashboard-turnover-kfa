@@ -96,6 +96,7 @@ def preprocess_uploaded_data(df):
            return x
         return np.nan
       df['USIA_CLEAN'] = df['USIA'].apply(clean_age)
+      df['USIA_CLEAN'] = pd.to_numeric(df['USIA_CLEAN'], errors='coerce')
     
     #8. konversi kolom rincian masa kerja new ke numerik
     if 'Rincian Masa Kerja New' in df.columns:

@@ -104,7 +104,9 @@ def preprocess_uploaded_data(df):
 
     #9. buat kolom usia_masuk
     if 'USIA_CLEAN' in df.columns and 'Rincian Masa Kerja New' in df.columns:
-      df['Usia_Masuk'] = df['USIA_CLEAN'] - (df['Rincian Masa Kerja New'] / 12)
+        df['USIA_CLEAN'] = df['USIA_CLEAN'].astype(float)
+        df['Rincian Masa Kerja New'] = df['Rincian Masa Kerja New'].astype(float)
+        df['Usia_Masuk'] = df['USIA_CLEAN'] - (df['Rincian Masa Kerja New'] / 12)
     
     #10. buat tingkatan_jabatan_new
     if 'Tingkatan Jabatan' in df.columns:

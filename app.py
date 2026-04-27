@@ -347,7 +347,7 @@ with tab2:
       st.exception(e)
 
 #TAB3
-if tab3 not None:
+if tab3 is not None:
   with tab3:
     st.subheader("Notifikasi Kontrak PKWT Akan Berakhir")
     df_pkwt = df[df['Status Pegawai New'].astype(str).str.upper().str.strip() == 'PKWT'].copy()

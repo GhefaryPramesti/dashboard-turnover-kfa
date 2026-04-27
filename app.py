@@ -347,26 +347,26 @@ with tab2:
       st.exception(e)
 
 #TAB3
-with tab3:
-  st.subheader("Notifikasi Kontrak PKWT Akan Berakhir")
-
-  df_pkwt = df[df['Status Pegawai New'].astype(str).str.upper().str.strip() == 'PKWT'].copy()
-
-  if df_pkwt.empty:
-    st.warning("Tidak ada data karyawan PKWT yang ditampilkan")
-  else:
-    #mencari kolom tanggal berakhir kontrak
-    tgl_kontrak_col = None
-    for c in df_pkwt.columns:
-      if 'BERAKHIR' in c.upper() or 'KONTRAK' in c.upper():
-        tgl_kontrak_col = c
-        break
-    if tgl_kontrak_col is None:
-      st.error("Kolom Tanggal Berakhir Tidak Ditemukan")
+if tab3 not None:
+  with tab3:
+    st.subheader("Notifikasi Kontrak PKWT Akan Berakhir")
+    df_pkwt = df[df['Status Pegawai New'].astype(str).str.upper().str.strip() == 'PKWT'].copy()
+    
+    if df_pkwt.empty:
+      st.warning("Tidak ada data karyawan PKWT yang ditampilkan")
     else:
-      df_pkwt[tgl_kontrak_col] = pd.to_datetime(df_pkwt[tgl_kontrak_col], errors='coerce')
-      df_pkwt = df_pkwt.dropna(subset=[tgl_kontrak_col])
-
+      #mencari kolom tanggal berakhir kontrak
+      tgl_kontrak_col = None
+      for c in df_pkwt.columns:
+        if 'BERAKHIR' in c.upper() or 'KONTRAK' in c.upper():
+          tgl_kontrak_col = c
+          break
+          if tgl_kontrak_col is None:
+            st.error("Kolom Tanggal Berakhir Tidak Ditemukan")
+          else:
+            df_pkwt[tgl_kontrak_col] = pd.to_datetime(df_pkwt[tgl_kontrak_col], errors='coerce')
+            df_pkwt = df_pkwt.dropna(subset=[tgl_kontrak_col])
+            
       #hitung sisa hari
       today_ts = pd.Timestamp.today().normalize()
       df_pkwt['Sisa_Hari'] = (df_pkwt[tgl_kontrak_col] - today_ts).dt.days

@@ -1,3 +1,4 @@
+%%writefile app.py
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -88,11 +89,13 @@ def preprocess_uploaded_data(df):
     if 'USIA' in df.columns:
       def clean_age(x):
         if isinstance(x, str):
-          try:
+           try:
             return int(x.split(' ')[0])
-          except:
+           except:
             return np.nan
-        return x
+        elif isinstance(x, (int, float)):
+           return x
+        return np.nan
       df['USIA_CLEAN'] = df['USIA'].apply(clean_age)
     
     #8. konversi kolom rincian masa kerja new ke numerik

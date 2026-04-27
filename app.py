@@ -77,7 +77,9 @@ def preprocess_uploaded_data(df):
         return 'DELETE'
       if any(k in status for k in keywords_resign):
         return 1
-      if 'AKTIF' in status or 'HABIS KONTRAK' in status:
+      if 'AKTIF' in status: 
+        return 0
+      if 'HABIS KONTRAK' in status:
         return 0
       return 'DELETE'
     df['Is_Resign'] = df['Status Terminasi Clean'].apply(label_status)
@@ -104,9 +106,9 @@ def preprocess_uploaded_data(df):
 
     #9. buat kolom usia_masuk
     if 'USIA_CLEAN' in df.columns and 'Rincian Masa Kerja New' in df.columns:
-        df['USIA_CLEAN'] = df['USIA_CLEAN'].astype(float)
-        df['Rincian Masa Kerja New'] = df['Rincian Masa Kerja New'].astype(float)
-        df['Usia_Masuk'] = df['USIA_CLEAN'] - (df['Rincian Masa Kerja New'] / 12)
+      df['USIA_CLEAN'] = df['USIA_CLEAN'].astype(float)
+      df['Rincian Masa Kerja New'] = df['Rincian Masa Kerja New'].astype(float)
+      df['Usia_Masuk'] = df['USIA_CLEAN'] - (df['Rincian Masa Kerja New'] / 12)
     
     #10. buat tingkatan_jabatan_new
     if 'Tingkatan Jabatan' in df.columns:

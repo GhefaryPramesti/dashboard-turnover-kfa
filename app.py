@@ -47,7 +47,7 @@ def preprocess_uploaded_data(df):
   df.columns = df.columns.str.strip()
 
   #2. buang kolom yg tdk perlu
-  cols_to_drop = ['DAY', 'MONTH', 'YEAR', 'Tanggal Lahir\n(Dd/Mm/Yyyy)', 'Rincian Usia', 
+  cols_to_drop = ['DAY', 'MONTH', 'YEAR', 'Tanggal Lahir\n(Dd/Mm/Yyyy)', 'Rincian Usia',
                     'Kategori Usia', 'Unit', 'COST CENTER INDUK', 'DAY.1', 'MONTH.1', 'YEAR.1',
                     'Masa Kerja New', 'Kategori Masa Kerja New', 'Masa Kerja (Y)', '>5 & >2',
                     'DAY.2', 'MONTH.2', 'YEAR.2', 'Date', 'Bulan', 'Tahun']
@@ -70,14 +70,14 @@ def preprocess_uploaded_data(df):
     df['Status Terminasi Clean'] = df['Status Terminasi'].astype(str).str.upper().str.strip()
     keywords_resign = ['ATAS PERMINATAAN SENDIRI', 'ATAS PERMINTAAN SENDIRI', 'MENGUNDURKAN DIRI', 'NON AKTIF', 'PENGUNDURAN DIRI','PERMINTAAN SENDIRI',
                        'RESIGN', 'RESIGN / APOTEK TUTUP', 'RESIGN / MENUNGGU SK PHK KFA', 'RESIGN ATAS PERMINTAAN SENDIRI', 'TIDAK AKTIF']
-    keywords_hapus = ['CUTI DILUAR TANGGUNGAN PERUSAHAAN', 'HABIS KONTRAK / APOTEK TUTUP', 'KHL', 'MENINGGAL DUNIA', 'MENINGGAL DUNIA', 
+    keywords_hapus = ['CUTI DILUAR TANGGUNGAN PERUSAHAAN', 'HABIS KONTRAK / APOTEK TUTUP', 'KHL', 'MENINGGAL DUNIA', 'MENINGGAL DUNIA',
                       'MUTASI ANTAR ENTITAS', 'PELANGGARAN', 'PENSIUN', 'PENSIUN DEFINITIF', 'PHK', 'RESTRUKTURISASI', 'WAFAT']
     def label_status(status):
       if any(k in status for k in keywords_hapus):
         return 'DELETE'
       if any(k in status for k in keywords_resign):
         return 1
-      if 'AKTIF' in status: 
+      if 'AKTIF' in status:
         return 0
       if 'HABIS KONTRAK' in status:
         return 0
@@ -99,7 +99,7 @@ def preprocess_uploaded_data(df):
         return np.nan
       df['USIA_CLEAN'] = df['USIA'].apply(clean_age)
       df['USIA_CLEAN'] = pd.to_numeric(df['USIA_CLEAN'], errors='coerce')
-    
+
     #8. konversi kolom rincian masa kerja new ke numerik
     if 'Rincian Masa Kerja New' in df.columns:
       df['Rincian Masa Kerja New'] = df['Rincian Masa Kerja New'].astype(str).str.upper().str.strip()
@@ -109,7 +109,7 @@ def preprocess_uploaded_data(df):
       df['USIA_CLEAN'] = df['USIA_CLEAN'].astype(float)
       df['Rincian Masa Kerja New'] = df['Rincian Masa Kerja New'].astype(float)
       df['Usia_Masuk'] = df['USIA_CLEAN'] - (df['Rincian Masa Kerja New'] / 12)
-    
+
     #10. buat tingkatan_jabatan_new
     if 'Tingkatan Jabatan' in df.columns:
       jabatan_map={'DIREKSI': 1, 'MANAGER': 2, 'ASISTEN MANAGER': 3, 'SUPERVISOR': 4, 'PELAKSANA': 5}
@@ -130,17 +130,17 @@ def preprocess_uploaded_data(df):
       df = df.drop_duplicates(subset=[kolom_lahir[0], kolom_masuk[0]], keep='last')
 
     #13. konversi kolom tanggal
-    date_cols = ['Tgl Mulai Bekerja\n(Dd/Mm/Yyyy) New', 'Tanggal Berakhir Kontrak', 
+    date_cols = ['Tgl Mulai Bekerja\n(Dd/Mm/Yyyy) New', 'Tanggal Berakhir Kontrak',
                  'Tanggal Terminasi (Dd/Mm/Yyyy)']
     for col in date_cols:
       if col in df.columns:
         df[col] = pd.to_datetime(df[col], errors='coerce')
-    
+
     #14. drop baris yang fitur utama nya kosong
     fitur_utama = ['USIA_CLEAN', 'Usia_Masuk', 'Rincian Masa Kerja New']
     fitur_ada = [f for f in fitur_utama if f in df.columns]
     df = df.dropna(subset=fitur_ada)
-    
+
     return df
 
 
@@ -421,7 +421,7 @@ if tab3 is not None:
   with tab3:
     st.subheader("Notifikasi Kontrak PKWT Akan Berakhir")
     df_pkwt = df[df['Status Pegawai New'].astype(str).str.upper().str.strip() == 'PKWT'].copy()
-    
+
     if df_pkwt.empty:
       st.warning("Tidak ada data karyawan PKWT yang ditampilkan")
     else:
@@ -436,7 +436,7 @@ if tab3 is not None:
           else:
             df_pkwt[tgl_kontrak_col] = pd.to_datetime(df_pkwt[tgl_kontrak_col], errors='coerce')
             df_pkwt = df_pkwt.dropna(subset=[tgl_kontrak_col])
-            
+
       #hitung sisa hari
       today_ts = pd.Timestamp.today().normalize()
       df_pkwt['Sisa_Hari'] = (df_pkwt[tgl_kontrak_col] - today_ts).dt.days

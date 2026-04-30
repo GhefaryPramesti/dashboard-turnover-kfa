@@ -150,7 +150,7 @@ st.sidebar.header("Filter Dashboard")
 #filter status pegawai
 status_filter = st.sidebar.radio(
     "Pilih Status Pegawai:",
-    options=["Semua", "PKWT (Karyawan Kontrak)", "PKWTT (Karyawan Tetap)"],
+    options=["PKWT (Karyawan Kontrak)", "PKWTT (Karyawan Tetap)"],
     index=0
 
 )

@@ -293,6 +293,8 @@ with tab2:
 
   if df_active.empty:
     st.warning("Tidak ada data karyawan aktif yang ditampilkan")
+    if "PKWT" in status_filter:
+      st.info("ℹ️ Karyawan PKWT yang aktif tidak ditemukan. Gunakan Tab 3 untuk melihat notifikasi kontrak PKWT.")
   else:
     try:
       #onehot encoding unit bisnis
